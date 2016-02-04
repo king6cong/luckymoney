@@ -1,4 +1,4 @@
-package com.xfunforx.luckymoney;
+package com.yiii.luckymoney;
 
 import android.app.Activity;
 import android.content.Context;
@@ -29,6 +29,7 @@ public class GhostLuckyMoney implements IXposedHookLoadPackage{
     Context context;
     AtomicInteger count = new AtomicInteger();
     AtomicBoolean changed = new AtomicBoolean(false);
+    String TAG = "luckymoney ";
 
     private void log(String tag, Object msg) {
 
@@ -69,12 +70,14 @@ public class GhostLuckyMoney implements IXposedHookLoadPackage{
             return;
         }
 
+        XposedBridge.log(TAG + loadPackageParam.packageName + " " + loadPackageParam.processName + " " + loadPackageParam.toString());
         try {
             //new message is coming here
             Class b = findClass("com.tencent.mm.booter.notification.b", loadPackageParam.classLoader);
             findAndHookMethod("com.tencent.mm.booter.notification.b", loadPackageParam.classLoader, "a", b, String.class, String.class, int.class, int.class, boolean.class, new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    XposedBridge.log(TAG + "notification" + param.toString() + " " + param.args[3].toString());
                     if (param.args[3].toString().equals("436207665")) {
                         count.addAndGet(2);
                         String nativeurl = readxml(param.args[2].toString());
@@ -99,10 +102,11 @@ public class GhostLuckyMoney implements IXposedHookLoadPackage{
             findAndHookMethod("com.tencent.mm.model.bc", loadPackageParam.classLoader, "ai", boolean.class, new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
-
+                    XposedBridge.log(TAG + "com.tencent.mm.model.bc " + param.toString());
                     findAndHookMethod("com.tencent.mm.plugin.luckymoney.ui.LuckyMoneyReceiveUI", loadPackageParam.classLoader, "onCreate", Bundle.class, new XC_MethodReplacement() {
                         @Override
                         protected Object replaceHookedMethod(MethodHookParam methodHookParam) throws Throwable {
+                            XposedBridge.log(TAG + "LuckyMoneyReceiveUI onCreate " + methodHookParam.toString());
                             Activity activity = (Activity) methodHookParam.thisObject;
                             activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON | WindowManager.LayoutParams.FLAG_FULLSCREEN);
                             XposedBridge.invokeOriginalMethod(methodHookParam.method,methodHookParam.thisObject,methodHookParam.args);
@@ -112,6 +116,7 @@ public class GhostLuckyMoney implements IXposedHookLoadPackage{
                     findAndHookMethod("com.tencent.mm.plugin.luckymoney.ui.LuckyMoneyDetailUI", loadPackageParam.classLoader, "onCreate", Bundle.class, new XC_MethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                            XposedBridge.log(TAG + "LuckyMoneyDetailUI onCreate " + param.toString());
                             if (changed.get()){
                                 changed.set(false);
                                 XposedHelpers.callMethod(param.thisObject, "finish");
@@ -123,6 +128,7 @@ public class GhostLuckyMoney implements IXposedHookLoadPackage{
                     findAndHookMethod("com.tencent.mm.plugin.luckymoney.ui.LuckyMoneyReceiveUI", loadPackageParam.classLoader, "e", int.class, int.class, String.class, j, new XC_MethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                            XposedBridge.log(TAG + "LuckyMoneyReceiveUI e " + param.toString());
                             if (count.get() > 0){
                                 changed.set(true);
                                 Class receiveui = findClass("com.tencent.mm.plugin.luckymoney.ui.LuckyMoneyReceiveUI", loadPackageParam.classLoader);
